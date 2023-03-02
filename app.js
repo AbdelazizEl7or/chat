@@ -6,7 +6,7 @@ const multer = require('multer')
 const upload = multer()
 let router = express.Router()
 const bodyParser = require("body-parser")
-let url = "mongodb+srv://zizo--:741852@chat.npitnxe.mongodb.net/?retryWrites=true&w=majority"
+let url = "mongodb+srv://abdelazizelhor:COr5wnnV0v4HSOGd@chat.d3kycik.mongodb.net/?retryWrites=true&w=majority"
 let client = new mongoCleint(url, {
     family: 4,
 })
@@ -67,8 +67,6 @@ router.post("/add/:id", (req, res, next) => {
     const all = req.body
     client.connect().then((client) => {
         let db = client.db("chat")
-
-
         db.collection(`chat-${id}`).insertOne(all)
             .catch(err => {
                 console.log(err)
@@ -77,38 +75,7 @@ router.post("/add/:id", (req, res, next) => {
         console.log("Erorr:" + err)
     })
 })
-router.delete("/delete/:id1/:id", (req, res, next) => {
-    console.log(req.body)
-    const all = req.body
-    client.connect().then((client) => {
-        let db = client.db("chat")
 
-
-        db.collection(`chat-${req.params.id1}`).deleteOne({ _id: ObjectId(req.params.id) })
-            .catch(err => {
-                console.log(err)
-            })
-    }).catch(err => {
-        console.log("Erorr:" + err)
-    })
-    res.json({ ok: true })
-})
-router.delete("/delete/:id", (req, res, next) => {
-    console.log(req.body)
-    const all = req.body
-    client.connect().then((client) => {
-        let db = client.db("chat")
-
-
-        db.collection(`chat`).deleteOne({ _id: ObjectId(req.params.id) })
-            .catch(err => {
-                console.log(err)
-            })
-    }).catch(err => {
-        console.log("Erorr:" + err)
-    })
-    res.json({ ok: true })
-})
 app.listen(process.env.PORT || 6060, () => {
     console.log("go")
 })
