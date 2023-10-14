@@ -6,11 +6,63 @@ const multer = require('multer')
 const upload = multer()
 let router = express.Router()
 const bodyParser = require("body-parser")
-let url = "mongodb+srv://zizoBoy:741852@islam-data.iovdiwe.mongodb.net/all-data?retryWrites=true&w=majority";
-let url2 = "mongodb+srv://abdelazizelhor:COr5wnnV0v4HSOGd@chat.d3kycik.mongodb.net/?retryWrites=true&w=majority";
+let url = "mongodb+srv://zizoBoy:741852@islam-data.iovdiwe.mongodb.net/all-data?retryWrites=true&w=majority"
+let url2 = "mongodb+srv://abdelazizelhor:COr5wnnV0v4HSOGd@chat.d3kycik.mongodb.net/?retryWrites=true&w=majority"
+const { Server } = require('socket.io');
+const { createServer } = require('node:http');
+const server = createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
 let client = new mongoCleint(url, {
     family: 4,
+})
+var id2 = ''
+io.on('connection', (socket) => {
+    socket.on('UserId', (id) => {
+        id2 = id
+        client.connect().then((client) => {
+            let db = client.db("chat")
+            db.collection(`chat-chat-All-users`).updateOne({ _id: new ObjectId(id) }, {
+                $set: {
+                    status: 'online'
+                }
+            }).catch(err => {
+            })
+            io.sockets.emit('UsersChange', id)
+        }).catch(err => {
+        })
+    })
+    socket.on('chat', (msg) => {
+        const all = msg;
+        client.connect().then((client) => {
+            let db = client.db("chat")
+            db.collection(`chat-${all.chatId}`).insertOne(all.msg)
+                .catch(err => {
+                })
+        }).catch(err => {
+        })
+        io.sockets.emit('chat', msg)
+    });
+    socket.on('disconnect', () => {
+        client.connect().then((client) => {
+            let db = client.db("chat")
+            db.collection(`chat-chat-All-users`).updateOne({ _id: new ObjectId(id2) }, {
+                $set: {
+                    status: 'offline',
+                    inDate: new Date()
+                }
+            }).catch(err => {
+            })
+            io.sockets.emit('UsersChange', id2)
+        }).catch(err => {
+        })
+    });
 });
+
 app.use(bodyParser.json())
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*")
@@ -18,30 +70,16 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type")
     res.setHeader("Content-Type", "application/json")
     next()
-})
+});
 app.use(router)
-app.get("/", upload.array(), (req, res) => {
-    client.connect().then((client) => {
-        let db = client.db("chat")
-        db.collection("chat").find({}).toArray().then((data) => {
-            res.json(data)
-        }).catch(err => {
-            console.log("Erorr:" + err)
-        })
-    }).catch(err => {
-        console.log("Erorr:" + err)
-    })
-})
 app.get("/get", upload.array(), (req, res) => {
     client.connect().then((client) => {
         let db = client.db("chat")
         db.collection("chat").find({}).toArray().then((data) => {
             res.json(data)
         }).catch(err => {
-            console.log("Erorr:" + err)
         })
     }).catch(err => {
-        console.log("Erorr:" + err)
     })
 })
 app.get("/get/:id", upload.array(), (req, res) => {
@@ -52,15 +90,12 @@ app.get("/get/:id", upload.array(), (req, res) => {
             res.json(data)
 
         }).catch(err => {
-            console.log("Erorr:" + err)
         })
 
     }).catch(err => {
-        console.log("Erorr:" + err)
     })
 })
 router.post("/add", (req, res, next) => {
-    console.log(req.body)
     const all = req.body
     client.connect().then((client) => {
         let db = client.db("chat")
@@ -68,24 +103,22 @@ router.post("/add", (req, res, next) => {
 
         db.collection("chat").insertOne(all)
             .catch(err => {
-                console.log(err)
             })
     }).catch(err => {
-        console.log("Erorr:" + err)
     })
 })
+
 router.post("/add/:id", (req, res, next) => {
     let id = req.params.id
-    console.log(req.body)
-    const all = req.body
+    const all = req.body;
     client.connect().then((client) => {
         let db = client.db("chat")
         db.collection(`chat-${id}`).insertOne(all)
             .catch(err => {
-                console.log(err)
+            }).then(e => {
+                res.json(e)
             })
     }).catch(err => {
-        console.log("Erorr:" + err)
     })
 })
 
@@ -96,15 +129,15 @@ router.post("/update/:chatId/:id", (req, res, next) => {
     const all = req.body
     client.connect().then((client) => {
         let db = client.db("chat")
-        db.collection(`chat-${chatId}`).updateOne({ id: id }, {$set:{
-            ...all
-        }})
+        db.collection(`chat-${chatId}`).updateOne({ _id: new ObjectId(id) }, {
+            $set: {
+                ...all
+            }
+        })
 
             .catch(err => {
-                console.log(err)
             })
     }).catch(err => {
-        console.log("Erorr:" + err)
     }).finally(() => {
         res.json(all)
     })
@@ -115,16 +148,14 @@ router.use("/delete/:chatId/:id", (req, res, next) => {
     let chatId = req.params.chatId
     client.connect().then((client) => {
         let db = client.db("chat")
-        db.collection(`chat-${chatId}`).deleteOne({ id: id })
+        db.collection(`chat-${chatId}`).deleteOne({ _id: new ObjectId(id) })
             .catch(err => {
-                console.log(err)
             })
     }).catch(err => {
-        console.log("Erorr:" + err)
     }).finally(() => {
     })
 })
 
-app.listen(process.env.PORT || 6060, () => {
+server.listen(process.env.PORT || 6060, () => {
     console.log("go")
 })
