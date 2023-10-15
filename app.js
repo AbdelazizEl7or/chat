@@ -158,6 +158,7 @@ router.use("/delete/:chatId/:id", (req, res, next) => {
 router.post("/emitAll/:chatId", (req, res, next) => {
     let chatId = req.params.chatId
     io.sockets.emit(chatId, req.body);
+    res.json({ok:'ok'})
 });
 server.listen(process.env.PORT || 6060, () => {
     console.log("go")
