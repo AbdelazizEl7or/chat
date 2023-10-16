@@ -23,6 +23,7 @@ let client = new mongoCleint(url, {
 var id2 = ''
 io.on('connection', (socket) => {
     socket.on('UserId', (id) => {
+        socket.id = id;
         id2 = id
         client.connect().then((client) => {
             let db = client.db("chat")
@@ -35,7 +36,7 @@ io.on('connection', (socket) => {
             io.sockets.emit('UsersChange', id)
         }).catch(err => {
         })
-    })
+    });
     socket.on('chat', (msg) => {
         const all = msg;
         client.connect().then((client) => {
@@ -47,10 +48,10 @@ io.on('connection', (socket) => {
         })
         io.sockets.emit('chat', msg)
     });
-    socket.on('disconnect', () => {
+    socket.on('disconnect', (e) => {
         client.connect().then((client) => {
             let db = client.db("chat")
-            db.collection(`chat-chat-All-users`).updateOne({ _id: new ObjectId(id2) }, {
+            db.collection(`chat-chat-All-users`).updateOne({ _id: new ObjectId(socket.id) }, {
                 $set: {
                     status: 'offline',
                     inDate: new Date()
@@ -155,10 +156,10 @@ router.use("/delete/:chatId/:id", (req, res, next) => {
     }).finally(() => {
     })
 })
+
 router.post("/emitAll/:chatId", (req, res, next) => {
     let chatId = req.params.chatId
     io.sockets.emit(chatId, req.body);
-    res.json({ok:'ok'})
 });
 server.listen(process.env.PORT || 6060, () => {
     console.log("go")
