@@ -163,4 +163,9 @@ router.post("/emitAll/:chatId", (req, res, next) => {
 });
 server.listen(process.env.PORT || 6060, () => {
     console.log("go")
+    setInterval(() => {
+    console.log("first")
+   fetch("https://chat-cz51.onrender.com/get/chat-All-users")
+fetch("https://tulip-fuschia-scooter.glitch.me")
+}, 50000);
 })
