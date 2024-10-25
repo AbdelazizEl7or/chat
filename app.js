@@ -5,6 +5,7 @@ const app = express()
 const multer = require('multer')
 const upload = multer()
 let router = express.Router()
+var request = require('request');
 const bodyParser = require("body-parser")
 let url = "mongodb+srv://zizoBoy:741852@islam-data.iovdiwe.mongodb.net/all-data?retryWrites=true&w=majority"
 let url2 = "mongodb+srv://abdelazizelhor:COr5wnnV0v4HSOGd@chat.d3kycik.mongodb.net/?retryWrites=true&w=majority"
@@ -154,7 +155,19 @@ router.use("/delete/:chatId/:id", (req, res, next) => {
             })
     }).catch(err => {
     }).finally(() => {
+        res.json({id:req.params.id})
     })
+})
+
+router.use("/getHttp/:http", (req, res, next) => {
+    let id = req.params.http
+   request.get(
+    id,
+    function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            res.json(body)
+        }
+    }
 })
 
 router.post("/emitAll/:chatId", (req, res, next) => {
@@ -163,9 +176,7 @@ router.post("/emitAll/:chatId", (req, res, next) => {
 });
 server.listen(process.env.PORT || 6060, () => {
     console.log("go")
-    setInterval(() => {
-    console.log("first")
+    setInterval(() => {   
    fetch("https://chat-cz51.onrender.com/get/chat-All-users")
-fetch("https://tulip-fuschia-scooter.glitch.me")
 }, 50000);
 })
