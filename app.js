@@ -195,13 +195,16 @@ router.use("/delete/:chatId/:id", (req, res, next) => {
     });
 });
 
-router.use("/getHttp/:http", (req, res, next) => {
-  let id = req.params.http;
-  request.get(id, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      res.json(body);
+app.get("/getHttp", upload.array(), (req, res) => {
+  request.get(
+    "http://ip-api.com/json?fields=status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,offset,currency,isp,org,as,asname,reverse,mobile,proxy,hosting,query",
+    function (error, response, body) {
+      if (!error && response.statusCode == 200) {
+        console.log(body);
+        res.json(body);
+      } else res.json(error);
     }
-  });
+  );
 });
 
 router.post("/emitAll/:chatId", (req, res, next) => {
