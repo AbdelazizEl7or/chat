@@ -25,33 +25,6 @@ let client = new mongoCleint(url, {
 });
 var id2 = "";
 io.on("connection", (socket) => {
-  socket.on("UserConnected", (id) => {
-    socket.id = id;
-    id2 = id;
-    client
-      .connect()
-      .then((client) => {
-        let db = client.db("chat");
-        db.collection(`zad-all-Users`)
-          .updateOne(
-            { _id: new ObjectId(id) },
-            {
-              $set: {
-                status: "online",
-              },
-            }
-          )
-          .catch((err) => {});
-        io.sockets.emit("ZadUsersChange", id);
-      })
-      .catch((err) => {});
-  });
-  // Listen for 'send_message' event from client
-  socket.on("send_message", (messageData) => {
-    // Broadcast the message to all other connected clients
-    io.emit("receive_message", messageData);
-  });
-
   socket.on("UserId", (id) => {
     socket.id = id;
     id2 = id;
@@ -59,16 +32,28 @@ io.on("connection", (socket) => {
       .connect()
       .then((client) => {
         let db = client.db("chat");
-        db.collection(`chat-chat-All-users`)
-          .updateOne(
-            { _id: new ObjectId(id) },
-            {
-              $set: {
-                status: "online",
-              },
-            }
-          )
-          .catch((err) => {});
+        if (db.collection(`zad-all-Users`).findOne({ _id: new ObjectId(id) }))
+          db.collection(`zad-all-Users`)
+            .updateOne(
+              { _id: new ObjectId(id) },
+              {
+                $set: {
+                  status: "online",
+                },
+              }
+            )
+            .catch((err) => {});
+        else
+          db.collection(`chat-chat-All-users`)
+            .updateOne(
+              { _id: new ObjectId(id) },
+              {
+                $set: {
+                  status: "online",
+                },
+              }
+            )
+            .catch((err) => {});
         io.sockets.emit("UsersChange", id);
       })
       .catch((err) => {});
