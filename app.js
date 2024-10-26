@@ -92,7 +92,7 @@ io.on("connection", (socket) => {
               }
             )
             .catch((err) => {});
-          io.sockets.emit("ZadUsersChange", id2);
+          io.sockets.emit("UsersChange", id2);
         } else {
           db.collection(`chat-chat-All-users`)
             .updateOne(
