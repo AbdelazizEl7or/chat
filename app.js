@@ -105,17 +105,18 @@ io.on("connection", (socket) => {
                   }
                 )
                 .catch((err) => {});
-            db.collection(`chat-chat-All-users`)
-              .updateOne(
-                { _id: new ObjectId(socket.id) },
-                {
-                  $set: {
-                    status: "offline",
-                    inDate: new Date(),
-                  },
-                }
-              )
-              .catch((err) => {});
+            else
+              db.collection(`chat-chat-All-users`)
+                .updateOne(
+                  { _id: new ObjectId(socket.id) },
+                  {
+                    $set: {
+                      status: "offline",
+                      inDate: new Date(),
+                    },
+                  }
+                )
+                .catch((err) => {});
             io.sockets.emit("UsersChange", id2);
           });
       })
