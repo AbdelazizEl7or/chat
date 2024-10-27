@@ -32,81 +32,52 @@ io.on("connection", (socket) => {
       .connect()
       .then((client) => {
         let db = client.db("chat");
-        if (db.collection(`zad-all-Users`).findOne({ _id: new ObjectId(id) }))
-          db.collection(`zad-all-Users`)
-            .updateOne(
-              { _id: new ObjectId(id) },
-              {
-                $set: {
-                  status: "online",
-                },
-              }
-            )
-            .catch((err) => {});
-        else
-          db.collection(`chat-chat-All-users`)
-            .updateOne(
-              { _id: new ObjectId(id) },
-              {
-                $set: {
-                  status: "online",
-                },
-              }
-            )
-            .catch((err) => {});
+        db.collection(`chat-chat-All-users`)
+          .updateOne(
+            { _id: new ObjectId(id) },
+            {
+              $set: {
+                status: "online",
+              },
+            }
+          )
+          .catch((err) => {});
         io.sockets.emit("UsersChange", id);
       })
       .catch((err) => {});
   });
   socket.on("chat", (msg) => {
     const all = msg;
-    client
-      .connect()
-      .then((client) => {
-        let db = client.db("chat");
-        db.collection(`chat-${all.chatId}`)
-          .insertOne(all.msg)
-          .catch((err) => {});
-      })
-      .catch((err) => {});
+    if (all.chatId)
+      client
+        .connect()
+        .then((client) => {
+          let db = client.db("chat");
+          db.collection(`chat-${all.chatId}`)
+            .insertOne(all.msg)
+            .catch((err) => {});
+        })
+        .catch((err) => {});
     io.sockets.emit("chat", msg);
   });
+
   socket.on("disconnect", (e) => {
     client
       .connect()
       .then((client) => {
         let db = client.db("chat");
-        if (
-          db
-            .collection(`zad-all-Users`)
-            .findOne({ _id: new ObjectId(socket.id) })
-        ) {
-          db.collection(`zad-all-Users`)
-            .updateOne(
-              { _id: new ObjectId(socket.id) },
-              {
-                $set: {
-                  status: "offline",
-                  inDate: new Date(),
-                },
-              }
-            )
-            .catch((err) => {});
-          io.sockets.emit("UsersChange", id2);
-        } else {
-          db.collection(`chat-chat-All-users`)
-            .updateOne(
-              { _id: new ObjectId(socket.id) },
-              {
-                $set: {
-                  status: "offline",
-                  inDate: new Date(),
-                },
-              }
-            )
-            .catch((err) => {});
-          io.sockets.emit("UsersChange", id2);
-        }
+        db.collection(`chat-chat-All-users`)
+          .updateOne(
+            { _id: new ObjectId(socket.id) },
+            {
+              $set: {
+                status: "offline",
+                inDate: new Date(),
+              },
+            }
+          )
+          .catch((err) => {});
+        io.sockets.emit("UsersChange", id2);
       })
       .catch((err) => {});
   });
@@ -225,19 +196,6 @@ router.use("/delete/:chatId/:id", (req, res, next) => {
       res.json({ id: req.params.id });
     });
 });
-
-app.get("/getHttp", upload.array(), (req, res) => {
-  request.get(
-    "http://ip-api.com/json?fields=status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,offset,currency,isp,org,as,asname,reverse,mobile,proxy,hosting,query",
-    function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        console.log(body);
-        res.json(body);
-      } else res.json(error);
-    }
-  );
-});
-
 router.post("/emitAll/:chatId", (req, res, next) => {
   let chatId = req.params.chatId;
   io.sockets.emit(chatId, req.body);
