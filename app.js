@@ -25,6 +25,28 @@ let client = new mongoCleint(url, {
 });
 var id2 = "";
 io.on("connection", (socket) => {
+  socket.on("UserConneected", (id) => {
+    socket.id = id;
+    id2 = id;
+    client
+      .connect()
+      .then((client) => {
+        let db = client.db("chat");
+        db.collection(`chat-zad-all-Users`)
+          .updateOne(
+            { _id: new ObjectId(id) },
+            {
+              $set: {
+                status: "online",
+              },
+            }
+          )
+          .catch((err) => {});
+        io.sockets.emit("UsersChange", id);
+      })
+      .catch((err) => {});
+  });
+
   socket.on("UserId", (id) => {
     socket.id = id;
     id2 = id;
@@ -66,18 +88,36 @@ io.on("connection", (socket) => {
       .connect()
       .then((client) => {
         let db = client.db("chat");
-        db.collection(`chat-chat-All-users`)
-          .updateOne(
-            { _id: new ObjectId(socket.id) },
-            {
-              $set: {
-                status: "offline",
-                inDate: new Date(),
-              },
-            }
-          )
-          .catch((err) => {});
-        io.sockets.emit("UsersChange", id2);
+        db.collection("chat-zad-all-Users")
+          .findOne({
+            _id: new ObjectId(socket.id),
+          })
+          .then((e) => {
+            if (e)
+              db.collection(`chat-zad-all-Users`)
+                .updateOne(
+                  { _id: new ObjectId(socket.id) },
+                  {
+                    $set: {
+                      status: "offline",
+                      inDate: new Date(),
+                    },
+                  }
+                )
+                .catch((err) => {});
+            db.collection(`chat-chat-All-users`)
+              .updateOne(
+                { _id: new ObjectId(socket.id) },
+                {
+                  $set: {
+                    status: "offline",
+                    inDate: new Date(),
+                  },
+                }
+              )
+              .catch((err) => {});
+            io.sockets.emit("UsersChange", id2);
+          });
       })
       .catch((err) => {});
   });
