@@ -5,8 +5,10 @@ const app = express();
 const multer = require("multer");
 const upload = multer();
 let router = express.Router();
+const fs = require("fs");
 var request = require("request");
 const bodyParser = require("body-parser");
+const path = require("path");
 let url =
   "mongodb+srv://zizoBoy:741852@islam-data.iovdiwe.mongodb.net/all-data?retryWrites=true&w=majority";
 let url2 =
@@ -23,6 +25,49 @@ const io = new Server(server, {
 let client = new mongoCleint(url, {
   family: 4,
 });
+const uploadsDir = path.join(__dirname, "uploads");
+app.use("/uploads", express.static(uploadsDir));
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+function cleanupOldFiles() {
+  fs.readdir(uploadsDir, (err, files) => {
+    if (err) {
+      console.error("Error reading uploads directory:", err);
+      return;
+    }
+
+    const now = Date.now();
+    const expirationTime = 20 * 24 * 60 * 60 * 1000; // 20 days in milliseconds
+
+    files.forEach((file) => {
+      const filePath = path.join(uploadsDir, file);
+      fs.stat(filePath, (err, stats) => {
+        if (err) {
+          console.error("Error getting file stats:", err);
+          return;
+        }
+
+        // Check if the file is older than 20 days
+        if (now - stats.mtimeMs > expirationTime) {
+          fs.unlink(filePath, (err) => {
+            if (err) {
+              console.error("Error deleting file:", err);
+            } else {
+              console.log(`Deleted old file: ${file}`);
+            }
+          });
+        }
+      });
+    });
+  });
+}
+
+// Schedule the cleanup to run once a day (86400000 milliseconds)
+setInterval(cleanupOldFiles, 86400000);
+
 var id2 = "";
 io.on("connection", (socket) => {
   socket.on("UserConneected", (id) => {
@@ -124,7 +169,7 @@ io.on("connection", (socket) => {
   });
 });
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "60mb" }));
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
@@ -237,6 +282,31 @@ router.use("/delete/:chatId/:id", (req, res, next) => {
       res.json({ id: req.params.id });
     });
 });
+
+router.post("/upload-screenshot/:name", (req, res) => {
+  let name = req.params.name;
+  const imageData = req.body.image;
+
+  // Remove the "data:image/png;base64," part of the string
+  const base64Data = imageData.replace(/^data:image\/png;base64,/, "");
+
+  // Create a unique filename (you can customize this logic)
+  const filename = `screenshot-${name}.png`;
+  const filePath = path.join(__dirname, "uploads", filename);
+
+  // Save the image to the server
+  fs.writeFile(filePath, base64Data, "base64", (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error saving image");
+    }
+
+    // Return the URL of the uploaded image
+    const imageUrl = `/uploads/${filename}`;
+    res.json({ imageUrl });
+  });
+});
+
 router.post("/emitAll/:chatId", (req, res, next) => {
   let chatId = req.params.chatId;
   io.sockets.emit(chatId, req.body);
