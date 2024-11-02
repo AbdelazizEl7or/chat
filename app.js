@@ -307,6 +307,38 @@ router.post("/upload-screenshot/:name", (req, res) => {
   });
 });
 
+app.use('/clear-uploads', (req, res) => {
+    fs.readdir(uploadsDir, (err, files) => {
+        if (err) {
+            return res.status(500).send('Error reading uploads directory');
+        }
+
+        // Prepare an array of promises for deleting each file
+        const deletePromises = files.map(file => {
+            const filePath = path.join(uploadsDir, file);
+            return new Promise((resolve, reject) => {
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve();
+                });
+            });
+        });
+
+        // Wait for all deletions to complete
+        Promise.all(deletePromises)
+            .then(() => {
+                res.send('Uploads folder cleared successfully');
+            })
+            .catch(err => {
+                console.error('Error deleting files:', err);
+                res.status(500).send('Error clearing uploads folder');
+            });
+    });
+});
+
+
 router.post("/emitAll/:chatId", (req, res, next) => {
   let chatId = req.params.chatId;
   io.sockets.emit(chatId, req.body);
