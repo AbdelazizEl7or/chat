@@ -13,6 +13,7 @@ let url =
   "mongodb+srv://zizoBoy:741852@islam-data.iovdiwe.mongodb.net/all-data?retryWrites=true&w=majority";
 let url2 =
   "mongodb+srv://abdelazizelhor:COr5wnnV0v4HSOGd@chat.d3kycik.mongodb.net/?retryWrites=true&w=majority";
+
 const { Server } = require("socket.io");
 const { createServer } = require("node:http");
 const server = createServer(app);
